@@ -30,7 +30,11 @@ concurrency:
 jobs:
   tests:
     name: Tests
-    runs-on: [ubuntu-latest, windows-latest, macos-latest]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
