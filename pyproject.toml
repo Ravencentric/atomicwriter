@@ -1,7 +1,7 @@
 [project]
 name = "atomicfile"
 version = "0.1.0"
-description = ""
+description = "Write files atomically."
 authors = [{ name = "Ravencentric", email = "me@ravencentric.cc" }]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
