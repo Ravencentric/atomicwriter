@@ -1,5 +1,5 @@
 [package]
-name = "_rust_atomicfile"
+name = "atomicfile"
 version = "0.0.0"
 edition = "2021"
 rust-version = "1.84"

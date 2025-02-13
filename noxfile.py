@@ -48,7 +48,7 @@ def clean(session: nox.Session) -> None:
             pass
 
 
-@nox.session
+@nox.session(python="3.13")
 def lint(session: nox.Session) -> None:
     install(session)
 
@@ -64,7 +64,7 @@ def lint(session: nox.Session) -> None:
     else:
         # Fix any fixable errors if running locally.
         cargo(session, "fmt")
-        cargo(session, "clippy", "--fix", "--lib", "-p", "_rust_atomicfile", "--allow-dirty")
+        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicfile", "--allow-dirty")
         session.run("ruff", "check", ".", "--fix")
         session.run("ruff", "format", ".")
 
