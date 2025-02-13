@@ -36,7 +36,7 @@ def test_overwrite(tmp_path: Path) -> None:
     assert dest.read_text() == "hello world"
 
 
-@pytest.mark.skipif(sys.version_info <= (3, 10), reason="requires contextlib.chdir")
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="requires contextlib.chdir")
 @pytest.mark.parametrize("file", ["dest.txt", "./dest.txt", r".\dest.txt"])
 def test_cwd(file: str, tmp_path: Path) -> None:
     with contextlib.chdir(tmp_path):
