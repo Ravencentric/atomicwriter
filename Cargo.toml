@@ -1,11 +1,11 @@
 [package]
-name = "atomicfile"
+name = "_rust_atomicfile"
 version = "0.0.0"
 edition = "2021"
 rust-version = "1.84"
 
 [lib]
-name = "atomicfile"
+name = "_rust_atomicfile"
 crate-type = ["cdylib"]
 
 [profile.release]

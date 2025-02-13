@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 import nox
 
@@ -36,6 +37,7 @@ def clean(session: nox.Session) -> None:
         "./dist",
         "./tests/__pycache__",
         "./__pycache__",
+        "./python/__pycache__",
         "./.nox",
     )
 
@@ -50,6 +52,9 @@ def clean(session: nox.Session) -> None:
 def lint(session: nox.Session) -> None:
     install(session)
 
+    session.run("mypy", ".")
+    session.run("python", "-m", "mypy.stubtest", "atomicfile")
+
     if os.getenv("CI"):
         # Do not modify files in CI, simply fail.
         cargo(session, "fmt", "--check")
@@ -59,7 +64,7 @@ def lint(session: nox.Session) -> None:
     else:
         # Fix any fixable errors if running locally.
         cargo(session, "fmt")
-        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicfile", "--allow-dirty")
+        cargo(session, "clippy", "--fix", "--lib", "-p", "_rust_atomicfile", "--allow-dirty")
         session.run("ruff", "check", ".", "--fix")
         session.run("ruff", "format", ".")
 
@@ -68,3 +73,6 @@ def lint(session: nox.Session) -> None:
 def tests(session: nox.Session) -> None:
     install(session)
     session.run("pytest", "-vv", *session.posargs)
+
+    for pyd in Path("./python/atomicfile/").glob("*.pyd"):
+        pyd.unlink(missing_ok=True)

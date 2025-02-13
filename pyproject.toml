@@ -52,7 +52,7 @@ fixable = ["ALL"]
 [tool.mypy]
 strict = true
 pretty = true
-files = ["atomicfile.pyi", "tests/**/*.py"]
+files = ["python/**/*.py", "tests/**/*.py"]
 enable_error_code = ["ignore-without-code"]
 
 [tool.pytest.ini_options]
@@ -63,6 +63,8 @@ testpaths = ["tests"]
 
 [tool.maturin]
 locked = true
+python-source = "python"
+module-name = "atomicfile._rust_atomicfile"
 
 [tool.cibuildwheel]
 enable = ["pypy", "cpython-freethreading"]

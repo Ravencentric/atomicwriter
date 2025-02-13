@@ -1,8 +1,10 @@
+from pathlib import Path
+
 from _typeshed import StrPath
 
 __all__ = ["write_bytes", "write_text"]
 
-def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> None:
+def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> Path:
     """
     Write bytes to a file atomically.
 
@@ -15,6 +17,11 @@ def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> None:
     overwrite : bool, optional
         Whether to overwrite the destination file if it already exists.
 
+    Returns
+    -------
+    Path
+        `Path` object representing the resolved destination file.
+
     Raises
     ------
     FileExistsError
@@ -24,7 +31,7 @@ def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> None:
 
     """
 
-def write_text(data: str, dest: StrPath, *, overwrite: bool = False) -> None:
+def write_text(data: str, dest: StrPath, *, overwrite: bool = False) -> Path:
     """
     Write string to a file atomically.
 
@@ -36,6 +43,11 @@ def write_text(data: str, dest: StrPath, *, overwrite: bool = False) -> None:
         Destination file path.
     overwrite : bool, optional
         Whether to overwrite the destination file if it already exists.
+
+    Returns
+    -------
+    Path
+        `Path` object representing the resolved destination file.
 
     Raises
     ------
