@@ -1,11 +1,11 @@
-# atomicfile
+# atomicwriter
 
 Write files atomically.
 
 ```py
-import atomicfile
+import atomicwriter
 
-atomicfile.write_text("hello world", "hello.txt")
+atomicwriter.write_text("hello world", "hello.txt")
 ```
 
 

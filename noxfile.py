@@ -53,7 +53,7 @@ def lint(session: nox.Session) -> None:
     install(session)
 
     session.run("mypy", ".")
-    session.run("python", "-m", "mypy.stubtest", "atomicfile")
+    session.run("python", "-m", "mypy.stubtest", "atomicwriter")
 
     if os.getenv("CI"):
         # Do not modify files in CI, simply fail.
@@ -64,7 +64,7 @@ def lint(session: nox.Session) -> None:
     else:
         # Fix any fixable errors if running locally.
         cargo(session, "fmt")
-        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicfile", "--allow-dirty")
+        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicwriter", "--allow-dirty")
         session.run("ruff", "check", ".", "--fix")
         session.run("ruff", "format", ".")
 
@@ -74,5 +74,5 @@ def tests(session: nox.Session) -> None:
     install(session)
     session.run("pytest", "-vv", *session.posargs)
 
-    for pyd in Path("./python/atomicfile/").glob("*.pyd"):
+    for pyd in Path("./python/atomicwriter/").glob("*.pyd"):
         pyd.unlink(missing_ok=True)

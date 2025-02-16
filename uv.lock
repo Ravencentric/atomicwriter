@@ -15,7 +15,7 @@ wheels = [
 ]
 
 [[package]]
-name = "atomicfile"
+name = "atomicwriter"
 version = "0.1.0"
 source = { editable = "." }
 

@@ -1,5 +1,5 @@
 [project]
-name = "atomicfile"
+name = "atomicwriter"
 version = "0.1.0"
 description = "Write files atomically."
 authors = [{ name = "Ravencentric", email = "me@ravencentric.cc" }]
@@ -23,7 +23,7 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/Ravencentric/atomicfile"
+Repository = "https://github.com/Ravencentric/atomicwriter"
 
 [dependency-groups]
 test = [
@@ -64,7 +64,7 @@ testpaths = ["tests"]
 [tool.maturin]
 locked = true
 python-source = "python"
-module-name = "atomicfile._rust_atomicfile"
+module-name = "atomicwriter._rust_atomicwriter"
 
 [tool.cibuildwheel]
 enable = ["pypy", "cpython-freethreading"]
