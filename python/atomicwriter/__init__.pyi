@@ -19,13 +19,13 @@ class AtomicWriter:
 
     __slots__ = ("_writer",)
 
-    def __init__(self, dest: StrPath, *, overwrite: bool = False) -> None:
+    def __init__(self, destination: StrPath, *, overwrite: bool = False) -> None:
         """
         Initialize AtomicWriter.
 
         Parameters
         ----------
-        dest : PathLike
+        destination : PathLike
             The path to the destination file.
         overwrite : bool, optional
             Whether to overwrite the destination file if it already exists.
@@ -38,7 +38,7 @@ class AtomicWriter:
         """
 
     @property
-    def dest(self) -> Path:
+    def destination(self) -> Path:
         """The path to the destination file."""
     @property
     def overwrite(self) -> bool:
@@ -80,11 +80,17 @@ class AtomicWriter:
 
         """
 
-    def commit(self) -> None:
+    def commit(self) -> Path:
         """
         Commit the contents of the temporary file to the destination file.
 
+        This method is idempotent and can be called multiple times without error.
         This operation atomically moves the temporary file to the destination file.
+
+        Returns
+        -------
+        Path
+            `Path` object representing the destination file.
 
         Raises
         ------
@@ -102,7 +108,7 @@ class AtomicWriter:
         self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
     ) -> None: ...
 
-def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> Path:
+def write_bytes(data: bytes, destination: StrPath, *, overwrite: bool = False) -> Path:
     """
     Write bytes to a file atomically.
 
@@ -110,7 +116,7 @@ def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> Path:
     ----------
     data : bytes
         Bytes to write.
-    dest : StrPath
+    destination : StrPath
         The path to the destination file.
     overwrite : bool, optional
         Whether to overwrite the destination file if it already exists.
@@ -129,7 +135,7 @@ def write_bytes(data: bytes, dest: StrPath, *, overwrite: bool = False) -> Path:
 
     """
 
-def write_text(data: str, dest: StrPath, *, overwrite: bool = False) -> Path:
+def write_text(data: str, destination: StrPath, *, overwrite: bool = False) -> Path:
     """
     Write text to a file atomically.
 
@@ -137,7 +143,7 @@ def write_text(data: str, dest: StrPath, *, overwrite: bool = False) -> Path:
     ----------
     data : str
         Text to write.
-    dest : StrPath
+    destination : StrPath
         The path to the destination file.
     overwrite : bool, optional
         Whether to overwrite the destination file if it already exists.

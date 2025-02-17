@@ -56,4 +56,4 @@ def test_cwd(file: StrPath, tmp_path: Path) -> None:
     with contextlib.chdir(tmp_path):
         dest = atomicwriter.write_text("hello", file)
         assert dest.read_text() == "hello"
-        assert dest == Path(file)
+        assert dest == Path(file).absolute()

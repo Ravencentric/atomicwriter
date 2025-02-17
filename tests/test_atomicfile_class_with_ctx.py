@@ -13,6 +13,23 @@ from .utils import StrPath, generate_pathlikes
 
 
 @pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+def test_properties(file: StrPath, tmp_path: Path) -> None:
+    dest = tmp_path / file
+    assert dest.exists() is False  # Doesn't exist
+
+    atfile = AtomicWriter(dest)
+    atfile.destination == dest
+    atfile.overwrite is False
+
+    atfile.write_text("hello world")
+    assert dest.exists() is False  # Still doesn't exist
+
+    atfile.commit()
+    assert dest.is_file()  # Now it does exist
+    assert dest.read_text() == "hello world"
+
+
+@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
 def test_write_text(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -61,6 +78,32 @@ def test_overwrite(file: StrPath, tmp_path: Path) -> None:
     atfile2.commit()
     assert dest.is_file()
     assert dest.read_text() == "hello world"
+
+
+@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+def test_commit_idempotence(file: StrPath, tmp_path: Path) -> None:
+    dest = tmp_path / file
+    assert dest.exists() is False  # Doesn't exist
+
+    atfile = AtomicWriter(dest)
+    atfile.write_text("hello world")
+    assert dest.exists() is False  # Still doesn't exist
+
+    committed_file1 = atfile.commit()
+    assert dest.is_file()  # Now it does exist
+    assert dest.read_text() == "hello world"
+
+    # Nothing happens
+    committed_file2 = atfile.commit()
+    assert dest.is_file()
+    assert dest.read_text() == "hello world"
+
+    # Nothing happens
+    committed_file3 = atfile.commit()
+    assert dest.is_file()
+    assert dest.read_text() == "hello world"
+
+    assert committed_file1 == committed_file2 == committed_file3 == dest
 
 
 @pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
@@ -154,6 +197,7 @@ def test_cwd(file: StrPath, tmp_path: Path) -> None:
         atfile = AtomicWriter(file)
         atfile.write_text("hello")
         atfile.commit()
+        assert atfile.destination == Path(file).absolute()
 
         with open(file) as dest:
             assert dest.read() == "hello"

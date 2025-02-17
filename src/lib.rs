@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use std::fs;
 use std::{
     io::Write,
-    path::{Path, PathBuf},
+    path::{self, Path, PathBuf},
 };
 
 /// Returns the canonicalized parent directory of a given path,
@@ -13,20 +13,21 @@ fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
         Some(parent) if parent == Path::new("") => Path::new("."),
         Some(parent) => parent,
         None => Path::new("."),
-    }
-    .to_path_buf();
+    };
+
+    let dir = path::absolute(dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
 
     // Create the directories if they don't exist.
-    fs::create_dir_all(&dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
+    fs::create_dir_all(dir.as_path()).map_err(|e| PyOSError::new_err(e.to_string()))?;
 
     Ok(dir)
 }
 
 /// A class for writing to a file atomically.
-#[pyclass(module = "atomicwriter")]
+#[pyclass]
 struct AtomicWriter {
     #[pyo3(get)]
-    dest: PathBuf,
+    destination: PathBuf,
     #[pyo3(get)]
     overwrite: bool,
     // Use Option<T> so that we can take ownership
@@ -38,16 +39,17 @@ struct AtomicWriter {
 #[pymethods]
 impl AtomicWriter {
     #[new]
-    #[pyo3(signature = (dest, *, overwrite=false))]
-    fn new(dest: PathBuf, overwrite: bool) -> PyResult<Self> {
-        let dir = get_parent_directory(dest.as_path())?;
+    #[pyo3(signature = (destination, *, overwrite=false))]
+    fn new(destination: PathBuf, overwrite: bool) -> PyResult<Self> {
+        let destination = path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
+        let dir = get_parent_directory(destination.as_path())?;
 
         let tempfile = tempfile::Builder::new()
             .append(true)
             .tempfile_in(dir.as_path())
             .map_err(|e| PyOSError::new_err(e.to_string()))?;
         Ok(Self {
-            dest,
+            destination,
             overwrite,
             tempfile: Some(tempfile),
         })
@@ -67,55 +69,59 @@ impl AtomicWriter {
     }
 
     /// Commit the contents of the temporary file to the destination file.
-    fn commit(&mut self) -> PyResult<()> {
-        // Error if overwrite is false and the destination already exists.
-        if !self.overwrite && self.dest.exists() {
-            return Err(PyFileExistsError::new_err(self.dest.clone()));
-        }
+    fn commit(&mut self) -> PyResult<PathBuf> {
+        // If we've already committed the file, then
+        // self.tempfile will be [`None`] and that
+        // means we have to do nothing.
+        // TLDR: self.commit() is idempotent.
+        if self.tempfile.is_some() {
+            // Error if overwrite is false and the destination already exists.
+            if !self.overwrite && self.destination.exists() {
+                return Err(PyFileExistsError::new_err(self.destination.clone()));
+            }
 
-        // Scope for managing the persisted file.
-        {
-            // Persist the temporary file.
-            let file = self
-                .tempfile
-                .take()
-                .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
-                .persist(self.dest.as_path())
-                .map_err(|e| PyOSError::new_err(e.to_string()))?;
-            let synced = file.sync_all();
+            // Scope for managing the persisted file.
+            {
+                // Persist the temporary file.
+                let file = self
+                    .tempfile
+                    .take()
+                    .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
+                    .persist(self.destination.as_path())
+                    .map_err(|e| PyOSError::new_err(e.to_string()))?;
+                let synced = file.sync_all();
 
-            // Clean up if the sync failed.
-            if let Err(err) = synced {
-                fs::remove_file(self.dest.as_path()).map_err(|e| PyOSError::new_err(e.to_string()))?;
-                return Err(PyOSError::new_err(err.to_string()));
+                // Clean up if the sync failed.
+                if let Err(err) = synced {
+                    fs::remove_file(self.destination.as_path()).map_err(|e| PyOSError::new_err(e.to_string()))?;
+                    return Err(PyOSError::new_err(err.to_string()));
+                }
             }
         }
-
-        Ok(())
+        Ok(self.destination.clone())
     }
 }
 
 // Quick convenience wrapper method
 #[pyfunction]
-#[pyo3(signature = (data, dest, *, overwrite=false))]
-fn write_bytes(data: &[u8], dest: PathBuf, overwrite: bool) -> PyResult<PathBuf> {
+#[pyo3(signature = (data, destination, *, overwrite=false))]
+fn write_bytes(data: &[u8], destination: PathBuf, overwrite: bool) -> PyResult<PathBuf> {
     {
-        let mut file = AtomicWriter::new(dest.clone(), overwrite)?;
+        let mut file = AtomicWriter::new(destination.clone(), overwrite)?;
         file.write_bytes(data)?;
-        file.commit()?;
+        file.commit()
     }
-    Ok(dest)
 }
 
 // Quick convenience wrapper method
 #[pyfunction]
-#[pyo3(signature = (data, dest, *, overwrite=false))]
-fn write_text(data: &str, dest: PathBuf, overwrite: bool) -> PyResult<PathBuf> {
-    write_bytes(data.as_bytes(), dest, overwrite)
+#[pyo3(signature = (data, destination, *, overwrite=false))]
+fn write_text(data: &str, destination: PathBuf, overwrite: bool) -> PyResult<PathBuf> {
+    write_bytes(data.as_bytes(), destination, overwrite)
 }
 
 #[pymodule(gil_used = false)]
-fn _rust_atomicwriter(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _impl(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AtomicWriter>()?;
     m.add_function(wrap_pyfunction!(write_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(write_text, m)?)?;

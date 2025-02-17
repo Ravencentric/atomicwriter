@@ -13,6 +13,21 @@ from .utils import StrPath, generate_pathlikes
 
 
 @pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+def test_properties(file: StrPath, tmp_path: Path) -> None:
+    dest = tmp_path / file
+    assert dest.exists() is False  # Doesn't exist
+
+    with AtomicWriter(dest) as atfile:
+        atfile.write_text("hello world")
+        atfile.destination == dest
+        atfile.overwrite is False
+        assert dest.exists() is False  # Still doesn't exist
+
+    assert dest.is_file()  # Now it does exist
+    assert dest.read_text() == "hello world"
+
+
+@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
 def test_write_text(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -154,6 +169,7 @@ def test_cwd(file: StrPath, tmp_path: Path) -> None:
     with contextlib.chdir(tmp_path):
         with AtomicWriter(file) as atfile:
             atfile.write_text("hello")
+            assert atfile.destination == Path(file).absolute()
 
         with open(file) as dest:
             assert dest.read() == "hello"

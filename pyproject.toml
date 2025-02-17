@@ -36,6 +36,10 @@ dev = [
   { include-group = "test" },
   { include-group = "lint" },
 ]
+docs = [
+    "furo>=2024.8.6",
+    "sphinx>=7.4.7",
+]
 
 
 [tool.ruff]
@@ -64,7 +68,7 @@ testpaths = ["tests"]
 [tool.maturin]
 locked = true
 python-source = "python"
-module-name = "atomicwriter._rust_atomicwriter"
+module-name = "atomicwriter._impl"
 
 [tool.cibuildwheel]
 enable = ["pypy", "cpython-freethreading"]

@@ -1,32 +1,32 @@
 from pathlib import Path
 
-from . import _rust_atomicwriter
+from . import _impl
 
 __all__ = ("AtomicWriter", "write_bytes", "write_text")
 
 
 class AtomicWriter:
-    __slots__ = ("_writer",)
+    __slots__ = ("_impl",)
 
-    def __init__(self, dest, *, overwrite=False):
-        self._writer = _rust_atomicwriter.AtomicWriter(dest, overwrite=overwrite)
+    def __init__(self, destination, *, overwrite=False):
+        self._impl = _impl.AtomicWriter(destination, overwrite=overwrite)
 
     @property
-    def dest(self):
-        return Path(self._writer.dest)
+    def destination(self):
+        return Path(self._impl.destination)
 
     @property
     def overwrite(self):
-        return self._writer.overwrite
+        return self._impl.overwrite
 
     def write_bytes(self, data):
-        self._writer.write_bytes(data)
+        self._impl.write_bytes(data)
 
     def write_text(self, data):
-        self._writer.write_text(data)
+        self._impl.write_text(data)
 
     def commit(self):
-        self._writer.commit()
+        return Path(self._impl.commit())
 
     def __enter__(self):
         return self
@@ -36,12 +36,12 @@ class AtomicWriter:
             self.commit()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(dest='{self.dest}', overwrite={self.overwrite})"
+        return f"{self.__class__.__name__}(destination='{self.destination}', overwrite={self.overwrite})"
 
 
-def write_bytes(data, dest, *, overwrite=False):
-    return Path(_rust_atomicwriter.write_bytes(data, dest, overwrite=overwrite))
+def write_bytes(data, destination, *, overwrite=False):
+    return Path(_impl.write_bytes(data, destination, overwrite=overwrite))
 
 
-def write_text(data, dest, *, overwrite=False):
-    return Path(_rust_atomicwriter.write_text(data, dest, overwrite=overwrite))
+def write_text(data, destination, *, overwrite=False):
+    return Path(_impl.write_text(data, destination, overwrite=overwrite))
