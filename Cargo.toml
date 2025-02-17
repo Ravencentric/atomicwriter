@@ -14,7 +14,6 @@ codegen-units = 1
 lto = "fat"
 
 [dependencies]
-dunce = "1.0.5"
 pyo3 = { version = "0.23.4", features = [
     "extension-module",
     "generate-import-lib",
