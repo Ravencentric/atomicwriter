@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.84"
 
 [lib]
-name = "_rust_atomicwriter"
+name = "_impl"
 crate-type = ["cdylib"]
 
 [profile.release]
