@@ -1,0 +1,21 @@
+[package]
+name = "atomicwriter"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.84"
+
+[lib]
+name = "_impl"
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+
+[dependencies]
+pyo3 = { version = "0.23.4", features = [
+    "extension-module",
+    "generate-import-lib",
+] }
+tempfile = "3.17.0"
