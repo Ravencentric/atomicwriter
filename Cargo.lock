@@ -24,9 +24,9 @@ checksum = "8f68f53c83ab957f72c32642f3868eec03eb974d1fb82e453128456482613d36"
 
 [[package]]
 name = "cc"
-version = "1.2.13"
+version = "1.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7777341816418c02e033934a09f20dc0ccaf65a5201ef8a450ae0105a573fda"
+checksum = "c736e259eea577f443d5c86c304f9f4ae0295c43f3ba05c21f1d66b5f06001af"
 dependencies = [
  "shlex",
 ]
@@ -185,9 +185,9 @@ dependencies = [
 
 [[package]]
 name = "python3-dll-a"
-version = "0.2.12"
+version = "0.2.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b66f9171950e674e64bad3456e11bb3cca108e5c34844383cfe277f45c8a7a8"
+checksum = "49fe4227a288cf9493942ad0220ea3f185f4d1f2a14f197f7344d6d02f4ed4ed"
 dependencies = [
  "cc",
 ]
@@ -253,9 +253,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a210d160f08b701c8721ba1c726c11662f877ea6b7094007e1ca9a1041945034"
+checksum = "00e2473a93778eb0bad35909dff6a10d28e63f792f16ed15e404fca9d5eeedbe"
 
 [[package]]
 name = "unindent"
