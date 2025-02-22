@@ -1,12 +1,12 @@
 use pyo3::exceptions::{PyFileExistsError, PyOSError, PyValueError};
 use pyo3::prelude::*;
-use std::fs;
+use std::{fs, io};
 use std::{
     io::Write,
     path::{self, Path, PathBuf},
 };
 
-/// Returns the canonicalized parent directory of a given path,
+/// Returns the absolute parent directory of a given path,
 /// creating it and any necessary ancestors if they don't exist.
 fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
     let dir = match path.as_ref().parent() {
@@ -18,7 +18,7 @@ fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
     let dir = path::absolute(dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
 
     // Create the directories if they don't exist.
-    fs::create_dir_all(dir.as_path()).map_err(|e| PyOSError::new_err(e.to_string()))?;
+    fs::create_dir_all(&dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
 
     Ok(dir)
 }
@@ -42,7 +42,7 @@ impl AtomicWriter {
     #[pyo3(signature = (destination, *, overwrite=false))]
     fn new(destination: PathBuf, overwrite: bool) -> PyResult<Self> {
         let destination = path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
-        let dir = get_parent_directory(destination.as_path())?;
+        let dir = get_parent_directory(&destination)?;
 
         let tempfile = tempfile::Builder::new()
             .append(true)
@@ -75,27 +75,39 @@ impl AtomicWriter {
         // means we have to do nothing.
         // TLDR: self.commit() is idempotent.
         if self.tempfile.is_some() {
-            // Error if overwrite is false and the destination already exists.
-            if !self.overwrite && self.destination.exists() {
-                return Err(PyFileExistsError::new_err(self.destination.clone()));
-            }
+            // Take ownership of the tempfile.
+            let owned_tempfile = self.tempfile.take().unwrap(); // Unwrap is infallible here because we've checked it above.
 
-            // Scope for managing the persisted file.
-            {
-                // Persist the temporary file.
-                let file = self
-                    .tempfile
-                    .take()
-                    .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
-                    .persist(self.destination.as_path())
-                    .map_err(|e| PyOSError::new_err(e.to_string()))?;
-                let synced = file.sync_all();
-
-                // Clean up if the sync failed.
-                if let Err(err) = synced {
-                    fs::remove_file(self.destination.as_path()).map_err(|e| PyOSError::new_err(e.to_string()))?;
-                    return Err(PyOSError::new_err(err.to_string()));
+            let file = if self.overwrite {
+                owned_tempfile
+                    .persist(&self.destination)
+                    .map_err(|e| PyOSError::new_err(e.to_string()))?
+            } else {
+                match owned_tempfile.persist_noclobber(&self.destination) {
+                    Ok(file) => file,
+                    Err(e) => {
+                        if e.error.kind() == io::ErrorKind::AlreadyExists {
+                            return Err(PyFileExistsError::new_err(self.destination.clone()));
+                        } else {
+                            return Err(PyOSError::new_err(e.to_string()));
+                        }
+                    }
                 }
+            };
+
+            let synced = file.sync_all();
+
+            // Clean up if the sync failed.
+            if let Err(err) = synced {
+                match fs::remove_file(&self.destination) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if e.kind() != io::ErrorKind::NotFound {
+                            return Err(PyOSError::new_err(e.to_string()));
+                        }
+                    }
+                }
+                return Err(PyOSError::new_err(err.to_string()));
             }
         }
         Ok(())
