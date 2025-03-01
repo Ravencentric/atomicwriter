@@ -7,7 +7,7 @@ import nox
 nox.needs_version = ">=2024.10.9"
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ("3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9", "pypy3.10")
+PYTHON_VERSIONS = ("3.9", "3.10", "3.11", "3.12", "3.13", "pypy3.9", "pypy3.10", "pypy3.11")
 
 
 def cargo(session: nox.Session, *args: str) -> None:
