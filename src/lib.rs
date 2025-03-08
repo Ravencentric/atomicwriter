@@ -2,7 +2,7 @@ use pyo3::exceptions::{PyFileExistsError, PyOSError, PyValueError};
 use pyo3::prelude::*;
 use std::{fs, io};
 use std::{
-    io::Write,
+    io::{BufWriter, Write},
     path::{self, Path, PathBuf},
 };
 
@@ -31,9 +31,9 @@ struct AtomicWriter {
     #[pyo3(get)]
     overwrite: bool,
     // Use Option<T> so that we can take ownership
-    // of the NamedTempFile in self.commit()
+    // of T in self.commit()
     // Ref: https://github.com/PyO3/pyo3/issues/2225#issuecomment-1073705548
-    tempfile: Option<tempfile::NamedTempFile>,
+    inner: Option<BufWriter<tempfile::NamedTempFile>>,
 }
 
 #[pymethods]
@@ -44,22 +44,25 @@ impl AtomicWriter {
         let destination = path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
         let dir = get_parent_directory(&destination)?;
 
-        let tempfile = tempfile::Builder::new()
+        let tmpfile = tempfile::Builder::new()
             .append(true)
             .tempfile_in(dir.as_path())
             .map_err(|e| PyOSError::new_err(e.to_string()))?;
+
+        let writer = BufWriter::new(tmpfile);
+
         Ok(Self {
             destination,
             overwrite,
-            tempfile: Some(tempfile),
+            inner: Some(writer),
         })
     }
 
     fn write_bytes(&mut self, data: &[u8]) -> PyResult<()> {
-        self.tempfile
+        self.inner
             .as_mut()
             .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
-            .write_all(data)
+            .write(data)
             .map_err(|e| PyOSError::new_err(e.to_string()))?;
         Ok(())
     }
@@ -74,23 +77,28 @@ impl AtomicWriter {
         // self.tempfile will be [`None`] and that
         // means we have to do nothing.
         // TLDR: self.commit() is idempotent.
-        if self.tempfile.is_some() {
-            // Take ownership of the tempfile.
-            let owned_tempfile = self.tempfile.take().unwrap(); // Unwrap is infallible here because we've checked it above.
+        if self.inner.is_some() {
+            // Take ownership of the underlying wrtier.
+            let mut bufwriter = self.inner.take().unwrap(); // Unwrap is infallible here because we've checked it above.
 
-            let file = if self.overwrite {
-                owned_tempfile
-                    .persist(&self.destination)
-                    .map_err(|e| PyOSError::new_err(e.to_string()))?
+            // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
+            bufwriter.flush().map_err(|e| PyOSError::new_err(e.to_string()))?;
+
+            let tmpfile = bufwriter.into_inner().map_err(|e| PyOSError::new_err(e.to_string()))?;
+
+            let persist_result = if self.overwrite {
+                tmpfile.persist(&self.destination)
             } else {
-                match owned_tempfile.persist_noclobber(&self.destination) {
-                    Ok(file) => file,
-                    Err(e) => {
-                        if e.error.kind() == io::ErrorKind::AlreadyExists {
-                            return Err(PyFileExistsError::new_err(self.destination.clone()));
-                        } else {
-                            return Err(PyOSError::new_err(e.to_string()));
-                        }
+                tmpfile.persist_noclobber(&self.destination)
+            };
+
+            let file = match persist_result {
+                Ok(f) => f,
+                Err(e) => {
+                    if e.error.kind() == io::ErrorKind::AlreadyExists {
+                        return Err(PyFileExistsError::new_err(self.destination.clone()));
+                    } else {
+                        return Err(PyOSError::new_err(e.to_string()));
                     }
                 }
             };
