@@ -18,4 +18,4 @@ pyo3 = { version = "0.24.0", features = [
     "extension-module",
     "generate-import-lib",
 ] }
-tempfile = "3.18.0"
+tempfile = "3.19.0"
