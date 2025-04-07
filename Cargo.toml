@@ -14,7 +14,7 @@ codegen-units = 1
 lto = "fat"
 
 [dependencies]
-pyo3 = { version = "0.24.0", features = [
+pyo3 = { version = "0.24.1", features = [
     "extension-module",
     "generate-import-lib",
 ] }
