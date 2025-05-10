@@ -1,9 +1,9 @@
-name: Build
+name: Build and Release
 
 on:
   push:
     tags:
-      - 'v[0-9].[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
   pull_request:
 
@@ -40,6 +40,37 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
 
+  build_abi3_wheels:
+    name: Build abi3 wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@6b9c6063abd6010835644d4c2e1bef4cf5cd0fca # v6.0.1
+        with:
+          enable-cache: false
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@faf86a6ed7efa889faf6996aa23820831055001a # v2.23.3
+        env:
+          CIBW_BUILD: cp39-*
+          CIBW_CONFIG_SETTINGS: build-args="--features abi3"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cibw-abi3-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
   build_sdist:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
     name: Build sdist
@@ -61,7 +92,7 @@ jobs:
   
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels, build_abi3_wheels, build_sdist]
     environment: pypi
     permissions:
       id-token: write # https://docs.pypi.org/trusted-publishers/using-a-publisher/#github-actions

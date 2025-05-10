@@ -62,7 +62,7 @@ def lint(session: nox.Session) -> None:
     else:
         # Fix any fixable errors if running locally.
         cargo(session, "fmt")
-        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicwriter", "--allow-dirty")
+        cargo(session, "clippy", "--fix", "--lib", "-p", "atomicwriter")
         session.run("ruff", "check", ".", "--fix")
         session.run("ruff", "format", ".")
 
