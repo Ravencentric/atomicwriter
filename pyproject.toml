@@ -43,11 +43,13 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 99
+
+[tool.uv]
+cache-keys = [{ file = "Cargo.toml" }, { file = "src/**/*.rs" }]
 
 [tool.ruff.lint]
 extend-select = ["I", "RUF", "UP", "N", "D4", "PYI"]
-ignore = ["PYI021"]
 fixable = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]

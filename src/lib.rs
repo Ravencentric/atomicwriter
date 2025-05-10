@@ -77,9 +77,8 @@ impl AtomicWriter {
         // self.tempfile will be [`None`] and that
         // means we have to do nothing.
         // TLDR: self.commit() is idempotent.
-        if self.inner.is_some() {
+        if let Some(mut bufwriter) = self.inner.take() {
             // Take ownership of the underlying wrtier.
-            let mut bufwriter = self.inner.take().unwrap(); // Unwrap is infallible here because we've checked it above.
 
             // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
             bufwriter.flush().map_err(|e| PyOSError::new_err(e.to_string()))?;
@@ -103,10 +102,8 @@ impl AtomicWriter {
                 }
             };
 
-            let synced = file.sync_all();
-
             // Clean up if the sync failed.
-            if let Err(err) = synced {
+            if let Err(err) = file.sync_all() {
                 match fs::remove_file(&self.destination) {
                     Ok(_) => {}
                     Err(e) => {
