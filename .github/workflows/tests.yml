@@ -9,14 +9,6 @@ on:
       - 'tests/**'
       - 'noxfile.py'
       - '.github/workflows/tests.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'noxfile.py'
-      - '.github/workflows/tests.yml'
   workflow_dispatch:
 
 env:
@@ -24,7 +16,7 @@ env:
   UV_LOCKED: 1
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
