@@ -181,7 +181,9 @@ def test_multiple_write_bytes_call_fails(file: StrPath, tmp_path: Path) -> None:
             atfile.write_bytes(b"but the Spark that resides in their core.\n")
             raise Exception  # failed mid write
             atfile.write_bytes(b"A Spark that gives you the will to make your world better.\n")
-            atfile.write_bytes(b"My fellow Primes had that spark, and I see their strength in you.")
+            atfile.write_bytes(
+                b"My fellow Primes had that spark, and I see their strength in you."
+            )
     except Exception:
         pass
 
@@ -189,7 +191,9 @@ def test_multiple_write_bytes_call_fails(file: StrPath, tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason="requires contextlib.chdir (3.11+)")
-@pytest.mark.parametrize("file", generate_pathlikes("dest.txt", "./dest.txt", r".\dest.txt"), ids=repr)
+@pytest.mark.parametrize(
+    "file", generate_pathlikes("dest.txt", "./dest.txt", r".\dest.txt"), ids=repr
+)
 def test_cwd(file: StrPath, tmp_path: Path) -> None:
     with contextlib.chdir(tmp_path):
         atfile = AtomicWriter(file)
