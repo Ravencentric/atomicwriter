@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from . import _impl
 
 __all__ = ("AtomicWriter",)
@@ -13,7 +11,7 @@ class AtomicWriter:
 
     @property
     def destination(self):
-        return Path(self._impl.destination)
+        return self._impl.destination
 
     @property
     def overwrite(self):
