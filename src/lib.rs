@@ -58,15 +58,29 @@ impl AtomicWriter {
         })
     }
 
+    #[pyo3(signature = (data, /))]
     fn write_bytes(&mut self, data: &[u8]) -> PyResult<()> {
         self.inner
             .as_mut()
+            // ValueError because that's what Python raises.
+            //
+            // ```python
+            // >>> f = open("foo.txt", "w")
+            // >>> f.close()
+            // >>> f.write("oops")
+            // Traceback (most recent call last):
+            // File "<python-input-2>", line 1, in <module>
+            //     f.write("oops")
+            //     ~~~~~~~^^^^^^^^
+            // ValueError: I/O operation on closed file.
+            // ```
             .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
             .write(data)
             .map_err(|e| PyOSError::new_err(e.to_string()))?;
         Ok(())
     }
 
+    #[pyo3(signature = (data, /))]
     fn write_text(&mut self, data: &str) -> PyResult<()> {
         self.write_bytes(data.as_bytes())
     }
