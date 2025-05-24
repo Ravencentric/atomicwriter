@@ -1,6 +1,6 @@
 [project]
 name = "atomicwriter"
-version = "0.2.4"
+version = "0.2.5"
 description = "Cross-platform atomic file writer for all-or-nothing operations."
 authors = [{ name = "Ravencentric", email = "me@ravencentric.cc" }]
 readme = "README.md"
