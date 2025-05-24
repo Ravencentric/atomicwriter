@@ -41,9 +41,6 @@ dev = [
 
 ]
 
-[tool.ruff]
-line-length = 99
-
 [tool.uv]
 cache-keys = [{ file = "Cargo.toml" }, { file = "src/**/*.rs" }]
 

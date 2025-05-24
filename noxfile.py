@@ -22,7 +22,11 @@ def cargo(session: nox.Session, *args: str) -> None:
     session.run("cargo", *args, external=True)
 
 
-def install(session: nox.Session, *, groups: str | tuple[str, ...] | None = None) -> None:
+def install(
+    session: nox.Session,
+    *,
+    groups: str | tuple[str, ...] | None = None,
+) -> None:
     args: list[str] = []
 
     if groups:

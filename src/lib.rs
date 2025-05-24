@@ -41,7 +41,8 @@ impl AtomicWriter {
     #[new]
     #[pyo3(signature = (destination, *, overwrite=false))]
     fn new(destination: PathBuf, overwrite: bool) -> PyResult<Self> {
-        let destination = path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
+        let destination =
+            path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
         let dir = get_parent_directory(&destination)?;
 
         let tmpfile = tempfile::Builder::new()
@@ -95,9 +96,13 @@ impl AtomicWriter {
             // Take ownership of the underlying wrtier.
 
             // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
-            bufwriter.flush().map_err(|e| PyOSError::new_err(e.to_string()))?;
+            bufwriter
+                .flush()
+                .map_err(|e| PyOSError::new_err(e.to_string()))?;
 
-            let tmpfile = bufwriter.into_inner().map_err(|e| PyOSError::new_err(e.to_string()))?;
+            let tmpfile = bufwriter
+                .into_inner()
+                .map_err(|e| PyOSError::new_err(e.to_string()))?;
 
             let persist_result = if self.overwrite {
                 tmpfile.persist(&self.destination)
