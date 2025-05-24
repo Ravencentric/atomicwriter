@@ -27,7 +27,7 @@ Repository = "https://github.com/Ravencentric/atomicwriter"
 
 [dependency-groups]
 test = ["pytest>=8.3.5"]
-lint = ["mypy>=1.15.0", "ruff>=0.9.9"]
+lint = ["mypy>=1.15.0", "ruff>=0.9.9", { include-group = "test" }]
 docs = [
   "mkdocs-autorefs>=1.4.0",
   "mkdocs-material>=9.6.7",
@@ -36,7 +36,6 @@ docs = [
 dev = [
   "maturin>=1.8.2",
   "nox>=2025.2.9",
-  { include-group = "test" },
   { include-group = "lint" },
   { include-group = "docs" },
 
@@ -58,7 +57,7 @@ fixable = ["ALL"]
 [tool.mypy]
 strict = true
 pretty = true
-files = ["python/**/*.py", "tests/**/*.py"]
+files = ["python/**/*.pyi", "tests/**/*.py"]
 enable_error_code = ["ignore-without-code"]
 
 [tool.pytest.ini_options]
