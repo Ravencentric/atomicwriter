@@ -24,6 +24,7 @@ dependencies = []
 
 [project.urls]
 Repository = "https://github.com/Ravencentric/atomicwriter"
+Documentation = "https://ravencentric.cc/atomicwriter/"
 
 [dependency-groups]
 test = ["pytest>=8.3.5"]

@@ -36,7 +36,7 @@ with AtomicWriter(destination) as writer:
 assert destination.is_file()
 ```
 
-Checkout the complete documentation [here](https://atomicwriter.ravencentric.cc/api-reference/).
+Checkout the complete documentation [here](https://ravencentric.cc/atomicwriter/api-reference/).
 
 ## Installation
 
