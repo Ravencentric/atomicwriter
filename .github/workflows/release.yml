@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-13, macos-14]
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -33,7 +33,7 @@ jobs:
           enable-cache: false
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@e6de07ed3921b51089aae6981989889cf1eddd0c # v3.1.1
+        uses: pypa/cibuildwheel@9e4e50bd76b3190f55304387e333f6234823ea9b # v3.1.2
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -48,7 +48,7 @@ jobs:
     strategy:
       matrix:
         # macos-13 is an intel runner, macos-14 is apple silicon
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-13, macos-14]
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -61,7 +61,7 @@ jobs:
           enable-cache: false
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@e6de07ed3921b51089aae6981989889cf1eddd0c # v3.1.1
+        uses: pypa/cibuildwheel@9e4e50bd76b3190f55304387e333f6234823ea9b # v3.1.2
         env:
           CIBW_BUILD: cp39-*
           CIBW_CONFIG_SETTINGS: build-args="--features abi3"
@@ -122,7 +122,8 @@ jobs:
         pipx run git-cliff --config .github/cliff-template.toml
         --github-repo "${GH_REPO}"
         --github-token "${GH_TOKEN}"
-        --latest --output "CHANGELOG.md"
+        --latest --strip header
+        --output "CHANGELOG.md"
       env:
         GH_TOKEN: ${{ github.token }}
         GH_REPO: ${{ github.repository }}

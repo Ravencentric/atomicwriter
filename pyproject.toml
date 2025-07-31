@@ -16,6 +16,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Typing :: Typed",
@@ -71,21 +72,14 @@ module-name = "atomicwriter._impl"
 
 [tool.cibuildwheel]
 enable = ["pypy", "cpython-freethreading"]
+archs = "auto64"
 build-frontend = "build[uv]"
-skip = ["*-manylinux_i686", "*-musllinux_i686", "*-win32"]
 test-groups = ["test"]
 test-command = "pytest {package}/tests"
 
 [tool.cibuildwheel.linux]
 before-all = "curl -sSf https://sh.rustup.rs | sh -s -- -y"
 environment = { PATH = "$HOME/.cargo/bin:$PATH" }
-
-manylinux-x86_64-image = "manylinux_2_28"
-manylinux-pypy_x86_64-image = "manylinux_2_28"
-manylinux-aarch64-image = "manylinux_2_28"
-manylinux-ppc64le-image = "manylinux_2_28"
-manylinux-s390x-image = "manylinux_2_28"
-manylinux-pypy_aarch64-image = "manylinux_2_28"
 
 [tool.cibuildwheel.macos]
 environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
