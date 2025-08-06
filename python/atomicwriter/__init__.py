@@ -1,3 +1,4 @@
+# type: ignore
 """Cross-platform atomic file writer for all-or-nothing operations."""
 
 from . import _impl
