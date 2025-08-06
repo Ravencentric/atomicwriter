@@ -84,12 +84,13 @@ class AtomicWriter:
         Commit the contents of the temporary file to the destination file.
 
         This method atomically moves the temporary file to the destination file.
-        It's also idempotent and can be called multiple times without error.
 
         Raises
         ------
         FileExistsError
             If `overwrite` is `False` and the destination file already exists.
+        ValueError
+            If attempting to commit a file that has already been committed and closed.
         OSError
             If an OS-level error occurs during file persistence or sync.
 
@@ -101,7 +102,7 @@ class AtomicWriter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_val is None:
-            self.commit()
+            self._impl.commit()
 
     def __repr__(self):
         return f"AtomicWriter(destination='{self.destination}', overwrite={self.overwrite})"
