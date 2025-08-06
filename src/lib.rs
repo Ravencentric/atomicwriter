@@ -6,6 +6,26 @@ use std::{
     path::{self, Path, PathBuf},
 };
 
+/// ValueError because that's what Python raises.
+///
+/// ```python
+/// >>> f = open("foo.txt", "w")
+/// >>> f.close()
+/// >>> f.write("oops")
+/// Traceback (most recent call last):
+/// File "<python-input-2>", line 1, in <module>
+///     f.write("oops")
+///     ~~~~~~~^^^^^^^^
+/// ValueError: I/O operation on closed file.
+/// ```
+fn closed_file_error() -> PyErr {
+    PyValueError::new_err("I/O operation on closed file.")
+}
+
+fn os_error(e: impl ToString) -> PyErr {
+    PyOSError::new_err(e.to_string())
+}
+
 /// Returns the absolute parent directory of a given path,
 /// creating it and any necessary ancestors if they don't exist.
 fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
@@ -15,10 +35,10 @@ fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
         None => Path::new("."),
     };
 
-    let dir = path::absolute(dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
+    let dir = path::absolute(dir).map_err(os_error)?;
 
     // Create the directories if they don't exist.
-    fs::create_dir_all(&dir).map_err(|e| PyOSError::new_err(e.to_string()))?;
+    fs::create_dir_all(&dir).map_err(os_error)?;
 
     Ok(dir)
 }
@@ -41,14 +61,13 @@ impl AtomicWriter {
     #[new]
     #[pyo3(signature = (destination, *, overwrite=false))]
     fn new(destination: PathBuf, overwrite: bool) -> PyResult<Self> {
-        let destination =
-            path::absolute(destination).map_err(|e| PyOSError::new_err(e.to_string()))?;
+        let destination = path::absolute(destination).map_err(os_error)?;
         let dir = get_parent_directory(&destination)?;
 
         let tmpfile = tempfile::Builder::new()
             .append(true)
             .tempfile_in(dir.as_path())
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
+            .map_err(os_error)?;
 
         let writer = BufWriter::new(tmpfile);
 
@@ -63,21 +82,9 @@ impl AtomicWriter {
     fn write_bytes(&mut self, data: &[u8]) -> PyResult<()> {
         self.inner
             .as_mut()
-            // ValueError because that's what Python raises.
-            //
-            // ```python
-            // >>> f = open("foo.txt", "w")
-            // >>> f.close()
-            // >>> f.write("oops")
-            // Traceback (most recent call last):
-            // File "<python-input-2>", line 1, in <module>
-            //     f.write("oops")
-            //     ~~~~~~~^^^^^^^^
-            // ValueError: I/O operation on closed file.
-            // ```
-            .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?
+            .ok_or_else(closed_file_error)?
             .write(data)
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
+            .map_err(os_error)?;
         Ok(())
     }
 
@@ -88,25 +95,18 @@ impl AtomicWriter {
 
     /// Commit the contents of the temporary file to the destination file.
     fn commit(&mut self) -> PyResult<()> {
-        // Take ownership of the underlying wrtier.
-        let mut bufwriter = self
-            .inner
-            .take()
-            .ok_or_else(|| PyValueError::new_err("I/O operation on closed file."))?;
-
-        // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
-        bufwriter
-            .flush()
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
-
-        let tmpfile = bufwriter
-            .into_inner()
-            .map_err(|e| PyOSError::new_err(e.to_string()))?;
+        let tempfile = {
+            // Take ownership of the underlying wrtier.
+            let mut bufwriter = self.inner.take().ok_or_else(closed_file_error)?;
+            // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
+            bufwriter.flush().map_err(os_error)?;
+            bufwriter.into_inner().map_err(os_error)?
+        };
 
         let persist_result = if self.overwrite {
-            tmpfile.persist(&self.destination)
+            tempfile.persist(&self.destination)
         } else {
-            tmpfile.persist_noclobber(&self.destination)
+            tempfile.persist_noclobber(&self.destination)
         };
 
         let file = match persist_result {
@@ -115,7 +115,7 @@ impl AtomicWriter {
                 if e.error.kind() == io::ErrorKind::AlreadyExists {
                     return Err(PyFileExistsError::new_err(self.destination.clone()));
                 } else {
-                    return Err(PyOSError::new_err(e.to_string()));
+                    return Err(os_error(e));
                 }
             }
         };
@@ -126,11 +126,11 @@ impl AtomicWriter {
                 Ok(_) => {}
                 Err(e) => {
                     if e.kind() != io::ErrorKind::NotFound {
-                        return Err(PyOSError::new_err(e.to_string()));
+                        return Err(os_error(e));
                     }
                 }
             }
-            return Err(PyOSError::new_err(err.to_string()));
+            return Err(os_error(err));
         }
         Ok(())
     }
