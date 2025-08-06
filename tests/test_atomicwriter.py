@@ -81,7 +81,7 @@ def test_overwrite(file: StrPath, tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
-def test_commit_idempotence(file: StrPath, tmp_path: Path) -> None:
+def test_commit_error(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
 
@@ -93,15 +93,8 @@ def test_commit_idempotence(file: StrPath, tmp_path: Path) -> None:
     assert dest.is_file()  # Now it does exist
     assert dest.read_text() == "hello world"
 
-    # Nothing happens
-    atfile.commit()
-    assert dest.is_file()
-    assert dest.read_text() == "hello world"
-
-    # Nothing happens
-    atfile.commit()
-    assert dest.is_file()
-    assert dest.read_text() == "hello world"
+    with pytest.raises(ValueError, match="I/O operation on closed file."):
+        atfile.commit()
 
 
 @pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
