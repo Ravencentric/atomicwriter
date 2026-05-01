@@ -73,3 +73,6 @@ docs/_build/
 
 # mypy
 .mypy_cache/
+
+# Zensical
+site/

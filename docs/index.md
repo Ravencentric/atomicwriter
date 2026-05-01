@@ -1,4 +1,4 @@
-# atomicwriter
+# AtomicWriter
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/Ravencentric/atomicwriter/tests.yml?label=tests)](https://github.com/Ravencentric/atomicwriter/actions/workflows/tests.yml)
 [![Build](https://img.shields.io/github/actions/workflow/status/Ravencentric/atomicwriter/release.yml?label=build)](https://github.com/Ravencentric/atomicwriter/actions/workflows/release.yml)

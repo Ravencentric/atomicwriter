@@ -35,9 +35,8 @@ dev = [
   { include-group = "lint" },
 ]
 docs = [
-  "mkdocs-autorefs>=1.4.0",
-  "mkdocs-material>=9.6.7",
   "mkdocstrings[python]>=0.28.2",
+  "zensical>=0.0.38",
 ]
 lint = [
   "mypy>=1.15.0",
