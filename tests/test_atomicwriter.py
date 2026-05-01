@@ -121,7 +121,7 @@ def test_commit_error(file: StrPath, tmp_path: Path) -> None:
     assert dest.is_file()  # Now it does exist
     assert dest.read_text() == "hello world"
 
-    with pytest.raises(ValueError, match="I/O operation on closed file."):
+    with pytest.raises(ValueError, match=r"I/O operation on closed file."):
         atfile.commit()
 
 
