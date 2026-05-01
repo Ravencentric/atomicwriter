@@ -1,18 +1,46 @@
 from __future__ import annotations
 
 import contextlib
+import os
 import re
 import sys
 import textwrap
+import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from atomicwriter import AtomicWriter
 
-from .utils import StrPath, generate_pathlikes
+if TYPE_CHECKING:
+    from _typeshed import StrPath
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+class MyPathLike(os.PathLike[str]):
+    def __init__(self, p: str) -> None:
+        self.p = p
+
+    def __fspath__(self) -> str:
+        return self.p
+
+    def __repr__(self) -> str:
+        if os.name == "nt":
+            return f"MyWindowsPathLike('{self.p}')"
+        return f"MyPosixPathLike('{self.p}')"
+
+
+parametrize_file = pytest.mark.parametrize(
+    "file",
+    [
+        factory(f"{prefix}{uuid.uuid4()}.tmp")
+        for factory in (str, Path, MyPathLike)
+        for prefix in ("", "./", ".\\")
+    ],
+    ids=repr,
+)
+
+
+@parametrize_file
 def test_properties(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -29,7 +57,7 @@ def test_properties(file: StrPath, tmp_path: Path) -> None:
     assert dest.read_text() == "hello world"
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+@parametrize_file
 def test_write_text(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -43,7 +71,7 @@ def test_write_text(file: StrPath, tmp_path: Path) -> None:
     assert dest.read_text() == "hello world"
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("dest.bin"), ids=repr)
+@parametrize_file
 def test_write_bytes(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -57,7 +85,7 @@ def test_write_bytes(file: StrPath, tmp_path: Path) -> None:
     assert dest.read_bytes() == b"hello world"
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+@parametrize_file
 def test_overwrite(file: StrPath, tmp_path: Path) -> None:
     # Pretend we have an existing file.
     dest = tmp_path / file
@@ -80,7 +108,7 @@ def test_overwrite(file: StrPath, tmp_path: Path) -> None:
     assert dest.read_text() == "hello world"
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("dest.txt"), ids=repr)
+@parametrize_file
 def test_commit_error(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -97,7 +125,7 @@ def test_commit_error(file: StrPath, tmp_path: Path) -> None:
         atfile.commit()
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
+@parametrize_file
 def test_multiple_write_text_calls(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -124,7 +152,7 @@ def test_multiple_write_text_calls(file: StrPath, tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
+@parametrize_file
 def test_multiple_write_text_call_fails(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -148,7 +176,7 @@ def test_multiple_write_text_call_fails(file: StrPath, tmp_path: Path) -> None:
     assert dest.exists() is False  # Must not exist
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
+@parametrize_file
 def test_multiple_write_byte_calls(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -177,7 +205,7 @@ def test_multiple_write_byte_calls(file: StrPath, tmp_path: Path) -> None:
     )
 
 
-@pytest.mark.parametrize("file", generate_pathlikes("Alpha Trion.txt"), ids=repr)
+@parametrize_file
 def test_multiple_write_bytes_call_fails(file: StrPath, tmp_path: Path) -> None:
     dest = tmp_path / file
     assert dest.exists() is False  # Doesn't exist
@@ -204,11 +232,7 @@ def test_multiple_write_bytes_call_fails(file: StrPath, tmp_path: Path) -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 11), reason="requires contextlib.chdir (3.11+)"
 )
-@pytest.mark.parametrize(
-    "file",
-    generate_pathlikes("dest.txt", "./dest.txt", r".\dest.txt"),
-    ids=repr,
-)
+@parametrize_file
 def test_cwd(file: StrPath, tmp_path: Path) -> None:
     with contextlib.chdir(tmp_path):
         atfile = AtomicWriter(file)
