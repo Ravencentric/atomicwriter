@@ -2,15 +2,14 @@
 name = "atomicwriter"
 version = "0.3.0"
 description = "Cross-platform atomic file writer for all-or-nothing operations."
-authors = [{ name = "Ravencentric", email = "me@ravencentric.cc" }]
 readme = "README.md"
-license = "MIT OR Apache-2.0"
 requires-python = ">=3.10"
+license = "MIT OR Apache-2.0"
+authors = [{ name = "Ravencentric", email = "me@ravencentric.cc" }]
 keywords = ["atomic", "file", "writer"]
 classifiers = [
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
-  "Programming Language :: Rust",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -19,43 +18,58 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Rust",
   "Typing :: Typed",
 ]
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/Ravencentric/atomicwriter"
 Documentation = "https://ravencentric.cc/atomicwriter/"
+Repository = "https://github.com/Ravencentric/atomicwriter"
 
 [dependency-groups]
-test = ["pytest>=9"]
-lint = [
-    "mypy>=1.15.0",
-    "ruff>=0.15.12",
-    { include-group = "test" },
+dev = [
+  "maturin>=1.13",
+  "nox>=2025.2.9",
+  { include-group = "docs" },
+  { include-group = "lint" },
 ]
 docs = [
   "mkdocs-autorefs>=1.4.0",
   "mkdocs-material>=9.6.7",
   "mkdocstrings[python]>=0.28.2",
 ]
-dev = [
-  "maturin>=1.8.2",
-  "nox>=2025.2.9",
-  { include-group = "lint" },
-  { include-group = "docs" },
-
+lint = [
+  "mypy>=1.15.0",
+  "ruff>=0.15.12",
+  { include-group = "test" },
 ]
+test = ["pytest>=9"]
 
-[tool.uv]
-cache-keys = [{ file = "Cargo.toml" }, { file = "src/**/*.rs" }]
+[build-system]
+requires = ["maturin>=1.13,<2.0"]
+build-backend = "maturin"
 
-[tool.ruff.lint]
-extend-select = ["I", "RUF", "UP", "N", "D4", "PYI"]
-fixable = ["ALL"]
+[tool.cibuildwheel]
+enable = ["pypy"]
+archs = "auto64"
+build-frontend = "build[uv]"
+test-groups = ["test"]
+test-command = "pytest {package}/tests"
 
-[tool.ruff.lint.extend-per-file-ignores]
-"tests/*" = ["D"]
+[tool.cibuildwheel.linux]
+# https://cibuildwheel.pypa.io/en/stable/faq/#building-rust-wheels
+before-all = "curl -sSf https://sh.rustup.rs | sh -s -- -y"
+environment = { PATH = "$HOME/.cargo/bin:$PATH" }
+
+[tool.cibuildwheel.macos]
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+
+[tool.maturin]
+editable-profile = "dev"
+locked = true
+module-name = "atomicwriter._impl"
+python-source = "python"
 
 [tool.mypy]
 strict = true
@@ -64,33 +78,23 @@ files = ["python/**/*.pyi", "tests/**/*.py"]
 enable_error_code = ["ignore-without-code"]
 
 [tool.pytest]
-minversion = "9.0"
-strict = true
-addopts = ["-ra", "--showlocals", "-v"]
+addopts = ["--showlocals", "-ra", "-v"]
 filterwarnings = ["error"]
 log_cli_level = "INFO"
+minversion = "9.0"
+strict = true
 testpaths = ["tests"]
 
-[tool.maturin]
-locked = true
-editable-profile = "dev"
-python-source = "python"
-module-name = "atomicwriter._impl"
+[tool.ruff.lint]
+extend-select = ["I", "RUF", "UP", "N", "D4", "PYI"]
+fixable = ["ALL"]
 
-[tool.cibuildwheel]
-enable = ["pypy", "cpython-freethreading"]
-archs = "auto64"
-build-frontend = "build[uv]"
-test-groups = ["test"]
-test-command = "pytest {package}/tests"
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/*" = ["D"]
 
-[tool.cibuildwheel.linux]
-before-all = "curl -sSf https://sh.rustup.rs | sh -s -- -y"
-environment = { PATH = "$HOME/.cargo/bin:$PATH" }
-
-[tool.cibuildwheel.macos]
-environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
-
-[build-system]
-requires = ["maturin>=1.8,<2.0"]
-build-backend = "maturin"
+[tool.uv]
+cache-keys = [
+  { file = "Cargo.toml" },
+  { file = "pyproject.toml" },
+  { file = "src/**/*.rs" },
+]
