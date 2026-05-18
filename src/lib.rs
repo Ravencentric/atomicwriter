@@ -83,7 +83,7 @@ impl AtomicWriter {
         self.inner
             .as_mut()
             .ok_or_else(closed_file_error)?
-            .write(data)
+            .write_all(data)
             .map_err(os_error)?;
         Ok(())
     }
@@ -96,7 +96,7 @@ impl AtomicWriter {
     /// Commit the contents of the temporary file to the destination file.
     fn commit(&mut self) -> PyResult<()> {
         let tempfile = {
-            // Take ownership of the underlying wrtier.
+            // Take ownership of the underlying writer.
             let mut bufwriter = self.inner.take().ok_or_else(closed_file_error)?;
             // As per docs: "It is critical to call flush before BufWriter<W> is dropped."
             bufwriter.flush().map_err(os_error)?;
