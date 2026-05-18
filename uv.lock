@@ -2,6 +2,10 @@ version = 1
 revision = 3
 requires-python = ">=3.10"
 
+[options]
+exclude-newer = "2026-05-11T18:40:53.5370182Z"
+exclude-newer-span = "P1W"
+
 [[package]]
 name = "argcomplete"
 version = "3.6.2"

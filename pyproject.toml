@@ -97,3 +97,4 @@ cache-keys = [
   { file = "pyproject.toml" },
   { file = "src/**/*.rs" },
 ]
+exclude-newer = "1 week"
