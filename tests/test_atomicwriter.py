@@ -46,8 +46,8 @@ def test_properties(file: StrPath, tmp_path: Path) -> None:
     assert dest.exists() is False  # Doesn't exist
 
     atfile = AtomicWriter(dest)
-    atfile.destination == dest
-    atfile.overwrite is False
+    assert atfile.destination == dest
+    assert atfile.overwrite is False
 
     atfile.write_text("hello world")
     assert dest.exists() is False  # Still doesn't exist
@@ -83,6 +83,15 @@ def test_write_bytes(file: StrPath, tmp_path: Path) -> None:
     atfile.commit()
     assert dest.is_file()  # Now it does exist
     assert dest.read_bytes() == b"hello world"
+
+
+def test_parent_directory_must_exist(tmp_path: Path) -> None:
+    dest = tmp_path / "missing" / "hello.txt"
+
+    with pytest.raises(OSError):
+        AtomicWriter(dest)
+
+    assert dest.parent.exists() is False
 
 
 @parametrize_file

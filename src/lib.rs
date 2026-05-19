@@ -1,9 +1,9 @@
 use pyo3::exceptions::{PyFileExistsError, PyOSError, PyValueError};
 use pyo3::prelude::*;
-use std::{fs, io};
+use std::io;
 use std::{
     io::{BufWriter, Write},
-    path::{self, Path, PathBuf},
+    path::{self, PathBuf},
 };
 
 /// ValueError because that's what Python raises.
@@ -26,23 +26,6 @@ fn os_error(e: impl ToString) -> PyErr {
     PyOSError::new_err(e.to_string())
 }
 
-/// Returns the absolute parent directory of a given path,
-/// creating it and any necessary ancestors if they don't exist.
-fn get_parent_directory(path: impl AsRef<Path>) -> PyResult<PathBuf> {
-    let dir = match path.as_ref().parent() {
-        Some(parent) if parent == Path::new("") => Path::new("."),
-        Some(parent) => parent,
-        None => Path::new("."),
-    };
-
-    let dir = path::absolute(dir).map_err(os_error)?;
-
-    // Create the directories if they don't exist.
-    fs::create_dir_all(&dir).map_err(os_error)?;
-
-    Ok(dir)
-}
-
 /// A class for writing to a file atomically.
 #[pyclass]
 struct AtomicWriter {
@@ -62,11 +45,13 @@ impl AtomicWriter {
     #[pyo3(signature = (destination, *, overwrite=false))]
     fn new(destination: PathBuf, overwrite: bool) -> PyResult<Self> {
         let destination = path::absolute(destination).map_err(os_error)?;
-        let dir = get_parent_directory(&destination)?;
+        let parent = destination
+            .parent()
+            .ok_or_else(|| PyValueError::new_err("destination must have a parent directory"))?;
 
         let tmpfile = tempfile::Builder::new()
             .append(true)
-            .tempfile_in(dir.as_path())
+            .tempfile_in(parent)
             .map_err(os_error)?;
 
         let writer = BufWriter::new(tmpfile);
@@ -103,36 +88,21 @@ impl AtomicWriter {
             bufwriter.into_inner().map_err(os_error)?
         };
 
-        let persist_result = if self.overwrite {
-            tempfile.persist(&self.destination)
-        } else {
-            tempfile.persist_noclobber(&self.destination)
+        // Sync before persisting the temporary file.
+        tempfile.as_file().sync_all().map_err(os_error)?;
+
+        let persisted = match self.overwrite {
+            true => tempfile.persist(&self.destination),
+            false => tempfile.persist_noclobber(&self.destination),
         };
 
-        let file = match persist_result {
-            Ok(f) => f,
-            Err(e) => {
-                if e.error.kind() == io::ErrorKind::AlreadyExists {
-                    return Err(PyFileExistsError::new_err(self.destination.clone()));
-                } else {
-                    return Err(os_error(e));
-                }
+        match persisted {
+            Ok(_) => Ok(()),
+            Err(e) if e.error.kind() == io::ErrorKind::AlreadyExists => {
+                Err(PyFileExistsError::new_err(self.destination.clone()))
             }
-        };
-
-        // Clean up if the sync failed.
-        if let Err(err) = file.sync_all() {
-            match fs::remove_file(&self.destination) {
-                Ok(_) => {}
-                Err(e) => {
-                    if e.kind() != io::ErrorKind::NotFound {
-                        return Err(os_error(e));
-                    }
-                }
-            }
-            return Err(os_error(err));
+            Err(e) => Err(os_error(e)),
         }
-        Ok(())
     }
 }
 
