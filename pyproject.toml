@@ -49,6 +49,7 @@ requires = ["maturin>=1.13,<2.0"]
 build-backend = "maturin"
 
 [tool.cibuildwheel]
+build = ["cp310-*", "cp3??t-*"]
 archs = "auto64"
 build-frontend = "build[uv]"
 test-groups = ["test"]
