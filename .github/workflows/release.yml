@@ -96,7 +96,6 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         GH_REPO: ${{ github.repository }}
 
-
     - name: Create Release
       shell: bash
       run: gh release create "${GH_REF_NAME}" -F "CHANGELOG.md"
