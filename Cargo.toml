@@ -15,10 +15,7 @@ lto = "fat"
 
 [dependencies]
 pyo3 = { version = "0.28.3", features = [
-    "extension-module",
+    "abi3-py310",
     "generate-import-lib",
 ] }
 tempfile = "3.27.0"
-
-[features]
-abi3 = ["pyo3/abi3"]
